@@ -26,6 +26,8 @@ def process_frame(frame):
     if (output):
         output["protocols"] = output["protocols"][:-1]
         output["frame_length"] = int(output["frame_length"].split(" ")[0])
+        if len(output.keys()) != len(COLS):
+            return {}
     return output
 
 

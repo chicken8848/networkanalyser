@@ -14,17 +14,15 @@ async def main():
         while True:
             frame = await create_frame()
             processed_frame = process_frame(frame)
-            print(processed_frame)
             if (processed_frame):
                 insert = [processed_frame[i] for i in COLS]
                 insert_tuple = tuple(insert)
-                print(insert_tuple)
                 cur = con.cursor()
                 cur.execute(f"INSERT INTO NetworkTraffic VALUES {insert_tuple}")
                 con.commit()
                 cur.close()
             else:
-                print("frame dropped")
+                pass
     except Exception as e:
         con.close()
         print(e)

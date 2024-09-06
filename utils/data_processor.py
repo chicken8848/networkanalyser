@@ -42,6 +42,8 @@ def calculate_bandwidth(df, interval=5):
         frames_of_interest = df.loc[end_time - df.loc[:, "epoch_arrival_time"] < timedelta(seconds=interval), ["epoch_arrival_time", "frame_length"]]
         total_bytes = frames_of_interest.loc[:, "frame_length"].sum()
         time_interval = frames_of_interest["epoch_arrival_time"].iloc[-1] - frames_of_interest["epoch_arrival_time"].iloc[0]
+        if time_interval.total_seconds() == 0:
+            return 0
         bandwidth = total_bytes / time_interval.total_seconds()
         return bandwidth
 

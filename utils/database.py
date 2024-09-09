@@ -25,6 +25,7 @@ async def main():
                 cur.close()
                 con.close()
         except Exception as e:
+            print(insert_tuple)
             print(e)
 
 if __name__ == "__main__":

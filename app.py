@@ -17,6 +17,8 @@ app.layout = html.Div(children=[
               placeholder='Top n results',
               type='number'),
     dcc.Graph(id='usage_by_ip'),
+    dcc.Dropdown(id='ip_filter', multi=False),
+    dcc.Graph(id='ip_use'),
     dcc.Dropdown(id='protocol_filter', multi=True),
     html.Div(id='usage_by_protocol'),
     dcc.Store(id='intermediate-value'),
@@ -76,16 +78,35 @@ def display_bandwidth_usage(data):
                   title='Bandwidth Usage')
     return fig
 
-@app.callback(Output('unique_protocols', 'data'), Input('intermediate-value', 'data'))
+@app.callback(Output('protocol_filter', 'options'), Input('intermediate-value', 'data'))
 def get_unique_protocols(data):
     df = pd.read_json(StringIO(data), orient='split')
     unique_protocols = list(df.loc[:, "protocols"].unique())
-    return json.dumps(unique_protocols)
+    return unique_protocols
 
-@app.callback(Output('protocol_filter', 'options'), [Input('unique_protocols', 'data')])
-def filter_p(data):
-    protocols = json.loads(data)
-    return protocols
+@app.callback(Output('ip_filter', 'options'), Input('intermediate-value', 'data'))
+def get_unique_ip(data):
+    df = pd.read_json(StringIO(data), orient='split')
+    unique_ip = list(df.loc[:, "source_address"].unique())
+    return unique_ip
+
+@app.callback(Output('ip_use', 'figure'), [Input('intermediate-value', 'data'), Input('ip_filter', 'value')])
+def get_single_ip(data, ip_filter):
+    df = pd.read_json(StringIO(data), orient='split')
+    df = df.loc[:, ["source_address", "frame_length", "protocols"]].groupby(by=['protocols', 'source_address']).sum().reset_index().sort_values("frame_length", ascending=False)
+    if ip_filter is None or len(ip_filter) == 0:
+        ip_filter = df.iloc[0]["source_address"]
+    dfp = df.loc[df.loc[:, "source_address"] == ip_filter, ["protocols", "frame_length"]]
+    fig = px.bar(dfp,
+                 x = "protocols",
+                 y = "frame_length",
+                 labels = {"protocols": "Protocol",
+                           "frame_length": "Total Bytes"},
+                 title=f"Usage by IP {ip_filter}"
+                 )
+    return fig
+
+
 
 @app.callback(Output('usage_by_protocol', 'children'), [Input('intermediate-value', 'data'), Input('protocol_filter', 'value')])
 def protocol_display(data, p_filter):
